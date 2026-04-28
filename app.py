@@ -1,9 +1,9 @@
 
-5import streamlit as st
+import streamlit as st
 import requests
 
-# ВСТАВЬ СЮДА СВОЙ НОВЫЙ КЛЮЧ
-API_KEY = "ТВОЙ_НОВЫЙ_КЛЮЧ_ОТ_API_FOOTBALL"
+# Твой рабочий ключ для API
+API_KEY = "689705cae4msh2ab829df81c7ef9p1a2f07jsn17bc2f216264"
 
 st.set_page_config(page_title="Zenith AI Pro", page_icon="🏆")
 st.title("🔥 Zenith AI: Элитный Сканер")
@@ -14,7 +14,7 @@ if st.button("🚀 Найти топ-матчи LIVE"):
         "x-rapidapi-key": API_KEY,
         "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
     }
-    # Запрашиваем только живые матчи (live=all)
+    # Запрашиваем только живые матчи
     params = {"live": "all"}
     
     with st.spinner('Сканирую мировые стадионы...'):
@@ -38,6 +38,9 @@ if st.button("🚀 Найти топ-матчи LIVE"):
                         st.subheader(f"{home} {goals_home} : {goals_away} {away}")
                         st.divider()
             else:
-                st.warning("В данный момент матчей не найдено. Проверь подписку на API.")
+                # Если подписка не активирована, API пришлет сообщение об ошибке
+                message = data.get('message', 'В данный момент активных LIVE-матчей не найдено.')
+                st.warning(f"Результат: {message}")
+                st.info("Если видишь ошибку подписки, нажми 'Subscribe' на странице API-Football в RapidAPI.")
         except Exception as e:
-            st.error(f"Ошибка: {e}")
+            st.error(f"Критическая ошибка: {e}")

@@ -1,4 +1,0 @@
-streamline
-pandas
-requests
-scikit- learn

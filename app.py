@@ -1,3 +1,5 @@
+
+
 import streamlit as st
 import random
 
@@ -15,3 +17,4 @@ if st.button(f"Запустить сканирование {sport}"):
 
 st.sidebar.write("---")
 st.sidebar.write("💰 Баланс: 100 000 ₸")
+

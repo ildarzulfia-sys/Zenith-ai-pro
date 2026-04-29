@@ -8,8 +8,9 @@ API_KEY = "689705cae4msh2ab829df81c7ef9p1a2f07jsn17bc2f216264"
 st.set_page_config(page_title="Zenith AI Pro", page_icon="⚽️")
 st.title("🏆 Zenith AI: Новый Сканер")
 
-if st.button("🚀 Запустить поиск LIVE"):
-    url = "https://free-api-live-football-data.p.rapidapi.com/football-current-live"
+if st.button("🚀 Запустить"):
+    # Ссылка для проверки всех лиг
+    url = "https://free-api-live-football-data.p.rapidapi.com/football-all-leagues"
     
     headers = {
         "x-rapidapi-key": API_KEY,
@@ -22,20 +23,13 @@ if st.button("🚀 Запустить поиск LIVE"):
             data = response.json()
             
             if data.get('status') == 'success' and 'data' in data:
-                games = data['data']
-                st.success(f"Найдено {len(games)} матчей в прямом эфире!")
+                items = data['data']
+                st.success(f"Связь есть! Найдено {len(items)} категорий.")
                 
-                for game in games:
-                    home = game['home_team']['name']
-                    away = game['away_team']['name']
-                    score = game['score']
-                    league = game['league']['name']
-                    time = game.get('time', 'LIVE')
-                    
-                    with st.expander(f"🏟 {league}: {home} {score} {away}"):
-                        st.write(f"⏱ **Время:** {time}")
-                        st.write(f"📊 **Статус:** Матч идет в реальном времени")
+                for item in items[:20]:  # Покажем первые 20 для теста
+                    name = item.get('name', 'Без названия')
+                    st.write(f"✅ Доступно: {name}")
             else:
-                st.warning("В данный момент активных матчей не найдено или проверь подписку.")
+                st.warning("Сервер ответил, но данных нет. Проверь подписку на RapidAPI.")
         except Exception as e:
             st.error(f"Ошибка связи: {e}")

@@ -1,15 +1,14 @@
-            
+
 import streamlit as st
 import requests
 
-# Твой ключ и настройки
 API_KEY = "689705cae4msh2ab829df81c7ef9p1a2f07jsn17bc2f216264"
 
 st.set_page_config(page_title="Zenith AI Pro", page_icon="⚽️")
-st.title("🏆 Zenith AI: Сканер LIVE")
+st.title("🏆 Zenith AI: Сканер")
 
-if st.button("🚀 Запустить поиск"):
-    # Правильная ссылка без двойных "url ="
+if st.button("🚀 Запустить"):
+    # Используем проверенный эндпоинт для лайв матчей
     url = "https://free-api-live-football-data.p.rapidapi.com/football-current-live"
     
     headers = {
@@ -17,25 +16,18 @@ if st.button("🚀 Запустить поиск"):
         "x-rapidapi-host": "free-api-live-football-data.p.rapidapi.com"
     }
     
-    with st.spinner('Связываюсь с футбольным сервером...'):
+    with st.spinner('Поиск матчей...'):
         try:
             response = requests.get(url, headers=headers)
-            data = response.json()
+            res_data = response.json()
             
-            if data.get('status') == 'success' and 'data' in data:
-                games = data['data']
-                if not games:
-                    st.info("Сейчас нет активных матчей. Попробуй чуть позже!")
-                else:
-                    st.success(f"Найдено {len(games)} матчей в эфире!")
-                    for game in games:
-                        home = game['home_team']['name']
-                        away = game['away_team']['name']
-                        score = game.get('score', '0:0')
-                        league = game['league']['name']
-                        with st.expander(f"🏟 {league}: {home} {score} {away}"):
-                            st.write(f"📊 Статус: LIVE")
+            # Проверяем, есть ли данные в ответе
+            if res_data.get('status') == 'success' and res_data.get('data'):
+                games = res_data['data']
+                st.success(f"Найдено матчей: {len(games)}")
+                for g in games:
+                    st.write(f"⚽ {g['home_team']['name']} vs {g['away_team']['name']} | Счет: {g['score']}")
             else:
-                st.warning("Сервер ответил, но матчи не найдены. Проверь подписку на RapidAPI.")
+                st.info("В базе API сейчас нет активных LIVE-матчей. Попробуй через 30-60 минут.")
         except Exception as e:
-            st.error(f"Ошибка связи: {e}")
+            st.error(f"Ошибка: {e}")

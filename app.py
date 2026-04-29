@@ -3,22 +3,18 @@ import streamlit as st
 import requests
 from datetime import datetime, timedelta
 
-# Твой универсальный ключ RapidAPI
+# Твой ключ
 API_KEY = "689705cae4msh2ab829df81c7ef9p1a2f07jsn17bc2f216264"
 
 st.set_page_config(page_title="Zenith AI Pro", page_icon="🏆", layout="wide")
 st.title("🏆 Zenith AI: Omni-Сканер 3.0")
 
-# --- БОКОВАЯ ПАНЕЛЬ (НАСТРОЙКИ) ---
-st.sidebar.header("⚙️ Настройки поиска")
-
-# 1. Выбор вида спорта
+# Настройки в сайдбаре
 sport_choice = st.sidebar.selectbox(
     "Вид спорта:",
     ["Football", "Hockey", "Tennis", "Basketball", "Volleyball"]
 )
 
-# 2. Логика выбора даты (Вчера, Сегодня, Завтра)
 today = datetime.now()
 date_options = {
     "⏪ Вчера": (today - timedelta(days=1)).strftime('%Y%m%d'),
@@ -28,7 +24,6 @@ date_options = {
 selected_label = st.sidebar.radio("Период:", list(date_options.keys()), index=1)
 selected_date = date_options[selected_label]
 
-# Словарь для API
 sport_map = {
     "Football": "soccer",
     "Hockey": "hockey",
@@ -37,9 +32,10 @@ sport_map = {
     "Volleyball": "volleyball"
 }
 
-# --- ОСНОВНОЙ ПРОВЕРЩИК ---
-if st.button(f"🔍 Сканировать {sport_choice} ({selected_label})"):
+if st.button(f"🔍 Сканировать {sport_choice}"):
     sport_type = sport_map[sport_choice]
+    
+    # ВАЖНО: Измененный URL для list-by-date
     url = f"https://livescore6.p.rapidapi.com/{sport_type}/list-by-date"
     
     headers = {
@@ -47,47 +43,39 @@ if st.button(f"🔍 Сканировать {sport_choice} ({selected_label})"):
         "x-rapidapi-host": "livescore6.p.rapidapi.com"
     }
     
-    params = {"Category": "general", "Date": selected_date}
+    # Убираем лишние фильтры, оставляем только дату
+    params = {"Date": selected_date}
 
-    with st.spinner('Связываюсь с глобальным сервером...'):
+    with st.spinner('Запрос к базе данных...'):
         try:
             response = requests.get(url, headers=headers, params=params)
             data = response.json()
             
+            # Проверка структуры ответа
             if 'Stages' in data and data['Stages']:
-                st.success(f"Найдено турниров: {len(data['Stages'])}")
-                
                 for stage in data['Stages']:
-                    league_name = stage.get('Snm', 'Турнир')
-                    country = stage.get('Cnm', '')
-                    
-                    with st.expander(f"🏟 {league_name} ({country})"):
+                    with st.expander(f"📍 {stage.get('Snm')} ({stage.get('Cnm', 'World')})"):
                         for event in stage.get('Events', []):
-                            # Данные команд
                             home = event.get('T1', [{}])[0].get('Nm', 'Команда 1')
                             away = event.get('T2', [{}])[0].get('Nm', 'Команда 2')
                             
-                            # Счет и Статус
+                            # Счет
                             score_h = event.get('Tr1')
                             score_a = event.get('Tr2')
-                            status = event.get('Eps', '') # Например, 'FT', 'Live', 'NS'
+                            status = event.get('Eps', 'NS')
                             
-                            # Формируем строку вывода
-                            if score_h is not None and score_h != '':
-                                # Если матч идет или завершен
-                                match_info = f"🕒 **{status}** | **{home}** {score_h} : {score_a}  **{away}**"
+                            if score_h is not None:
+                                st.write(f"🕒 **{status}** | **{home}** {score_h} : {score_a} **{away}**")
                             else:
-                                # Если матч еще не начался - вычисляем время
+                                # Время начала
                                 raw_time = str(event.get('Esd', '00000000000000'))
-                                if len(raw_time) >= 12:
-                                    start_t = f"{raw_time[8:10]}:{raw_time[10:12]}"
-                                else:
-                                    start_t = "Время не указ."
-                                match_info = f"📅 Нач. {start_t} | {home} vs {away}"
-                            
-                            st.write(match_info)
+                                start_t = f"{raw_time[8:10]}:{raw_time[10:12]}" if len(raw_time) >= 12 else "--:--"
+                                st.write(f"📅 {start_t} | {home} vs {away}")
             else:
-                st.info(f"На выбранный день ({selected_label}) событий в базе API не найдено.")
+                # Вывод для отладки, если данных нет
+                st.info(f"На {selected_label} матчей по {sport_choice} не найдено.")
+                if 'Message' in data:
+                    st.warning(f"Сообщение от сервера: {data['Message']}")
                 
         except Exception as e:
-            st.error(f"Произошла ошибка: {e}")
+            st.error(f"Ошибка связи: {e}")

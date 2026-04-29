@@ -1,48 +1,65 @@
 import streamlit as st
 import requests
 
-# Твой ключ (оставляем текущий, если API поддерживает другие виды спорта)
+# Твой универсальный ключ
 API_KEY = "689705cae4msh2ab829df81c7ef9p1a2f07jsn17bc2f216264"
 
 st.set_page_config(page_title="Zenith AI Omni", page_icon="🏆", layout="wide")
-st.title("🏆 Zenith AI: Универсальный Сканер")
+st.title("🏆 Zenith AI: Универсальный LIVE-Сканер")
 
-# Выбор вида спорта
-sport = st.sidebar.selectbox(
+# Боковая панель для выбора спорта
+sport_choice = st.sidebar.selectbox(
     "Выберите вид спорта:",
-    ["Футбол", "Хоккей", "Баскетбол", "Теннис", "Волейбол"]
+    ["Football", "Hockey", "Tennis", "Basketball"]
 )
 
-st.header(f"Анализ: {sport}")
+# Словарь для связи с API (подстраиваем под Livescore)
+sport_map = {
+    "Football": "soccer",
+    "Hockey": "hockey",
+    "Tennis": "tennis",
+    "Basketball": "basketball"
+}
 
-if st.button(f"🚀 Запустить сканер {sport}"):
-    # Здесь мы будем менять ссылки в зависимости от выбора
-    if sport == "Футбол":
-        url = "https://free-api-live-football-data.p.rapidapi.com/football-current-live"
-    elif sport == "Хоккей":
-        url = "https://free-api-live-football-data.p.rapidapi.com/hockey-live" # Пример
-    else:
-        url = "https://free-api-live-football-data.p.rapidapi.com/multi-live" # Заглушка
+st.header(f"📡 Мониторинг: {sport_choice}")
 
+if st.button(f"🚀 Найти активные матчи"):
+    sport_type = sport_map[sport_choice]
+    # Универсальный адрес Livescore API
+    url = f"https://livescore6.p.rapidapi.com/{sport_type}/list-live"
+    
     headers = {
         "x-rapidapi-key": API_KEY,
-        "x-rapidapi-host": "free-api-live-football-data.p.rapidapi.com"
+        "x-rapidapi-host": "livescore6.p.rapidapi.com"
     }
 
-    with st.spinner(f'Ищу все матчи по виду: {sport}...'):
+    with st.spinner(f'Сканирую планету на наличие матчей ({sport_choice})...'):
         try:
             response = requests.get(url, headers=headers)
             data = response.json()
             
-            if data.get('status') == 'success' and data.get('data'):
-                matches = data['data']
-                st.success(f"Найдено событий: {len(matches)}")
-                # Вывод списка матчей
-                for m in matches:
-                    with st.expander(f"🏟 {m.get('home_team', {}).get('name')} vs {m.get('away_team', {}).get('name')}"):
-                        st.write(f"📊 Счет: {m.get('score', '0:0')}")
+            # Логика вывода данных из Livescore API
+            if 'Stages' in data:
+                stages = data['Stages']
+                st.success(f"Найдено лиг в эфире: {len(stages)}")
+                
+                for stage in stages:
+                    league_name = stage.get('Snm', 'Турнир')
+                    st.subheader(f"📍 {league_name}")
+                    
+                    for event in stage.get('Events', []):
+                        home = event.get('T1', [{}])[0].get('Nm', 'Команда 1')
+                        away = event.get('T2', [{}])[0].get('Nm', 'Команда 2')
+                        score = f"{event.get('Tr1', '0')} : {event.get('Tr2', '0')}"
+                        time = event.get('Eps', 'LIVE')
+                        
+                        with st.expander(f"➕ {home} {score} {away} ({time})"):
+                            st.write(f"📊 Статус матча: Идет сейчас")
             else:
-                st.info(f"В данный момент активных матчей ({sport}) не найдено.")
+                st.info(f"В данный момент активных LIVE-матчей по виду {sport_choice} не найдено.")
+                
         except Exception as e:
-            st.error(f"Этот API пока не поддерживает {sport}. Нужно подключить доп. модуль.")
+            st.error(f"Ошибка подключения к Livescore API: {e}")
+
+    
 

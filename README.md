@@ -1,38 +1,42 @@
+
 import streamlit as st
 import requests
 
-# Твой ключ, который мы нашли
-API_KEY = "689705cae4msh2ab829df81c7ef9p1a2f07jsn17bc2f216264" 
+# Твой универсальный ключ RapidAPI
+API_KEY = "689705cae4msh2ab829df81c7ef9p1a2f07jsn17bc2f216264"
 
-st.set_page_config(page_title="Zenith AI Live", page_icon="⚽️")
-st.title("🛡 Zenith AI: Live Сканер")
+st.set_page_config(page_title="Zenith AI Pro", page_icon="⚽️")
+st.title("🏆 Zenith AI: Новый Сканер")
 
-if st.button("🔍 Найти активные матчи"):
+if st.button("🚀 Запустить поиск LIVE"):
+    # URL нового сервиса
     url = "https://free-api-live-football-data.p.rapidapi.com/football-current-live"
+    
     headers = {
         "x-rapidapi-key": API_KEY,
         "x-rapidapi-host": "free-api-live-football-data.p.rapidapi.com"
     }
     
-    with st.spinner('Подключаюсь к серверу...'):
+    with st.spinner('Подключаюсь к новому серверу...'):
         try:
-            r = requests.get(url, headers=headers)
-            data = r.json()
+            response = requests.get(url, headers=headers)
+            data = response.json()
             
-            if data.get('status') == 'success' and data.get('response'):
-                st.write(f"### Найдено матчей: {len(data['response'])}")
-                for match in data['response'][:5]: # Показываем первые 5 игр
-                    home = match['home_team']['name']
-                    away = match['away_team']['name']
-                    score = match['score']['full_time']
+            if data.get('status') == 'success' and 'data' in data:
+                games = data['data']
+                st.success(f"Найдено {len(games)} матчей в прямом эфире!")
+                
+                for game in games:
+                    home = game['home_team']['name']
+                    away = game['away_team']['name']
+                    score = game['score']
+                    league = game['league']['name']
+                    time = game.get('time', 'LIVE')
                     
-                    st.write("---")
-                    st.subheader(f"⚽️ {home} {score} {away}")
-                    
-                    # Расчет вероятности
-                    prob = 74 
-                    st.write(f"📈 Вероятность прохода прогноза: **{prob}%**")
+                    with st.expander(f"🏟 {league}: {home} {score} {away}"):
+                        st.write(f"⏱ **Время:** {time}")
+                        st.write(f"📊 **Статус:** Матч идет в реальном времени")
             else:
-                st.warning("Прямо сейчас живых матчей не найдено. Загляни, когда начнутся игры!")
-        except:
-            st.error("Что-то пошло не так. Проверь, создал ли ты файл requirements.txt")
+                st.warning("В данный момент активных матчей не найдено или проверь подписку.")
+        except Exception as e:
+            st.error(f"Ошибка связи: {e}")
